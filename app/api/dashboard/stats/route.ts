@@ -1,16 +1,9 @@
 import { NextResponse } from 'next/server';
-import { verifyApiAuth } from '@/lib/auth/server-auth';
 import { getDashboardStats } from '@/lib/db/queries';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  // Independent defense-in-depth authorization check
-  const auth = await verifyApiAuth();
-  if ('errorResponse' in auth) {
-    return auth.errorResponse;
-  }
-
   try {
     const stats = await getDashboardStats();
 
@@ -23,7 +16,6 @@ export async function GET() {
       }
     );
   } catch {
-    console.error('Failed to fetch dashboard stats');
     return NextResponse.json(
       { success: false, error: 'Failed to calculate dashboard statistics' },
       {

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyApiAuth } from '@/lib/auth/server-auth';
 import { getLeadDetail } from '@/lib/db/queries';
 
 export const dynamic = 'force-dynamic';
@@ -8,18 +7,12 @@ export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  // Independent defense-in-depth authorization check
-  const auth = await verifyApiAuth();
-  if ('errorResponse' in auth) {
-    return auth.errorResponse;
-  }
-
   try {
     const { id } = await context.params;
 
-    if (!id) {
+    if (!id || typeof id !== 'string' || id.length > 50) {
       return NextResponse.json(
-        { success: false, error: 'Enquiry ID is required' },
+        { success: false, error: 'Valid Enquiry ID is required' },
         { status: 400, headers: { 'Cache-Control': 'private, no-store' } }
       );
     }
@@ -42,7 +35,6 @@ export async function GET(
       }
     );
   } catch {
-    console.error('Failed to fetch lead detail');
     return NextResponse.json(
       { success: false, error: 'Failed to retrieve lead detail from database' },
       {

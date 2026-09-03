@@ -17,7 +17,6 @@ export default function DashboardOverviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedCareInfoId, setSelectedCareInfoId] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-  const [adminEmail, setAdminEmail] = useState<string>('admin@noblecare4u.com');
 
   const fetchStats = async (isRefresh = false) => {
     try {
@@ -26,19 +25,15 @@ export default function DashboardOverviewPage() {
       setError(null);
 
       const res = await fetch('/api/dashboard/stats');
-      if (res.status === 401) {
-        window.location.href = '/login';
-        return;
-      }
+      const json = await res.json().catch(() => null);
 
-      const json = await res.json();
-      if (json.success && json.data) {
+      if (res.ok && json?.success && json?.data) {
         setStats(json.data);
       } else {
-        setError(json.error || 'Failed to load dashboard metrics');
+        setError(json?.error || 'Failed to load dashboard metrics from database');
       }
     } catch {
-      setError('Unable to connect to dashboard API. Please check your connection.');
+      setError('Unable to connect to dashboard API. Please check your database connection.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -47,16 +42,6 @@ export default function DashboardOverviewPage() {
 
   useEffect(() => {
     fetchStats();
-
-    // Also fetch current admin profile email
-    fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.email) {
-          setAdminEmail(data.email);
-        }
-      })
-      .catch(() => {});
   }, []);
 
   return (
@@ -71,7 +56,6 @@ export default function DashboardOverviewPage() {
       <div className="main-content">
         {/* Top Header */}
         <Header
-          adminEmail={adminEmail}
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           onRefresh={() => fetchStats(true)}
           isRefreshing={refreshing}

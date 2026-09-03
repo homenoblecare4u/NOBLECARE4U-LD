@@ -1,6 +1,8 @@
 # Noblecare4u Lead Operations Dashboard (NOBLECARE4U-LD)
 
-Dedicated, private operations dashboard for Noblecare4u administrators to securely monitor, analyze, and manage patient care enquiries and multi-touch acquisition attribution.
+Dedicated, private operations dashboard for Noblecare4u administrators to view, analyze, and manage patient care enquiries and multi-touch acquisition attribution.
+
+Matches the standard C2C lead dashboard architecture used across JIB Solar, Dhrugo, and Ralsha.
 
 ## Architecture & Collections
 
@@ -10,51 +12,42 @@ The dashboard connects server-side in read-only mode to the same MongoDB databas
 - **`care_info`**: Individual healthcare enquiries (`userId`, `careNeeded`: `Elder Care` | `Nursing` | `Physiotherapy` | `Not sure yet`, `additionalInfo`, `createdAt`).
 - **`utm_campaigns`**: Multi-touch marketing touchpoints (`userId`, `route`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `platform`, `createdAt`).
 
-## Security Controls
+> **Attribution Notice**: The database does not contain a direct `submissionId` or `careInfoId` foreign key linking `care_info` to `utm_campaigns`. Therefore, the dashboard displays individual care enquiries alongside the user's complete campaign touchpoint history, without falsely claiming a 1:1 binding between a specific enquiry and a specific UTM touchpoint.
 
-- **Edge Route Protection**: Next.js Edge Middleware enforces authentication on all dashboard routes and APIs.
-- **Server Session Management**: HMAC-SHA256 signed JWT session cookie (`noblecare4u_session`) using `jose` with `httpOnly`, `SameSite=Lax`, and `Secure` in production.
-- **Password Security**: Passwords hashed with `bcryptjs` (salt rounds: 10); raw passwords are never logged or stored.
-- **Privacy Enforcement**: Telemetry fields (`clientIp`, `userAgent`) are strictly prohibited and never queried or displayed. Phone numbers are masked on overview widgets.
-- **Defense in Depth**: Every API endpoint independently verifies the session server-side.
-- **Best-Effort Rate Limiting**: In-memory login attempt throttle (max 5 failed attempts per IP per 15 minutes) as a development & local defense control. *(Note: Distributed serverless deployment on Vercel requires an external store like Redis for cross-lambda rate limiting).*
+## Privacy & Search Engine Controls
+
+- **Robots Disallow**: A restrictive [`app/robots.ts`](file:///Users/Ishant/Downloads/Dev-Clapingo/NOBLECARE4U-LD/app/robots.ts) disallows all web crawlers (`User-agent: *`, `Disallow: /`).
+- **No-Index Metadata**: All pages include `noindex, nofollow, noarchive` metadata directives.
+  *(Note: These controls reduce search engine indexing but do not provide access security).*
+- **No Telemetry**: `clientIp` and `userAgent` are never queried, recorded, or displayed.
+- **Privacy Phone Masking**: Phone numbers are masked on Overview summary tables (`+91 98XXX XX123`).
 
 ## Environment Variables
 
-Create `.env.local` based on `.env.example`:
+Only one environment variable is required in `.env.local`:
 
 ```env
+# Server-side MongoDB Connection (Connects to the same database as the main website)
 MONGODB_URI=mongodb+srv://...
-AUTH_SECRET=your_32_byte_hex_secret
-ADMIN_EMAIL=admin@noblecare4u.com
-ADMIN_PASSWORD_HASH=$2b$10$...
 ```
 
-### Generating Secrets
+Never commit `.env.local`. Keep placeholders in `.env.example`.
 
-1. **AUTH_SECRET**:
-   ```bash
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-   ```
-
-2. **ADMIN_PASSWORD_HASH**:
-   ```bash
-   npm run hash-password "your-admin-password"
-   ```
-
-## Development & Build
+## Development & Production Build
 
 ```bash
 # Install dependencies
 npm install
 
-# Run locally on port 3001
+# Start development server on port 3001
 npm run dev
 
 # Lint code
 npm run lint
 
-# Typecheck and build for production
+# Type check
 npx tsc --noEmit
+
+# Production build
 npm run build
 ```

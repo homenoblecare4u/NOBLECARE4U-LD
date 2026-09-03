@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import FiltersBar from '@/components/FiltersBar';
@@ -12,7 +12,6 @@ import { GetLeadsQueryOptions, GetLeadsResponse, LeadRecord, PaginationMeta } fr
 import { AlertCircle } from 'lucide-react';
 
 function LeadsExplorerContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [leads, setLeads] = useState<LeadRecord[]>([]);
@@ -33,7 +32,6 @@ function LeadsExplorerContent() {
     searchParams.get('selected') || null
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-  const [adminEmail, setAdminEmail] = useState<string>('admin@noblecare4u.com');
 
   // Filter state
   const [filters, setFilters] = useState<GetLeadsQueryOptions>({
@@ -72,20 +70,16 @@ function LeadsExplorerContent() {
         if (queryFilters.limit) params.set('limit', String(queryFilters.limit));
 
         const res = await fetch(`/api/leads?${params.toString()}`);
-        if (res.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
+        const json: GetLeadsResponse = await res.json().catch(() => null);
 
-        const json: GetLeadsResponse = await res.json();
-        if (json.success && json.data) {
+        if (res.ok && json?.success && json?.data) {
           setLeads(json.data.leads);
           setPagination(json.data.pagination);
           if (json.data.availableServices) setAvailableServices(json.data.availableServices);
           if (json.data.availableSources) setAvailableSources(json.data.availableSources);
           if (json.data.availableCampaigns) setAvailableCampaigns(json.data.availableCampaigns);
         } else {
-          setError(json.message || 'Failed to retrieve enquiries');
+          setError(json?.message || 'Failed to retrieve enquiries from database');
         }
       } catch {
         setError('Network error while querying leads from database.');
@@ -100,15 +94,6 @@ function LeadsExplorerContent() {
   useEffect(() => {
     fetchLeads(filters);
   }, [filters, fetchLeads]);
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.email) setAdminEmail(data.email);
-      })
-      .catch(() => {});
-  }, []);
 
   const handleFilterChange = (updated: Partial<GetLeadsQueryOptions>) => {
     setFilters((prev) => ({
@@ -149,7 +134,6 @@ function LeadsExplorerContent() {
       <div className="main-content">
         {/* Top Header */}
         <Header
-          adminEmail={adminEmail}
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           onRefresh={() => fetchLeads(filters, true)}
           isRefreshing={refreshing}

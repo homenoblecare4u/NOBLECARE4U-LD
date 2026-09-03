@@ -2,26 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { Menu, LogOut, Shield, RefreshCw } from 'lucide-react';
+import { Menu, ShieldCheck, RefreshCw } from 'lucide-react';
 import { formatIstDateTime } from '@/lib/date';
 
 interface HeaderProps {
-  adminEmail?: string;
   onMenuToggle?: () => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }
 
 export default function Header({
-  adminEmail = 'admin@noblecare4u.com',
   onMenuToggle,
   onRefresh,
   isRefreshing = false,
 }: HeaderProps) {
-  const router = useRouter();
   const [currentIstTime, setCurrentIstTime] = useState<string>('');
-  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
   useEffect(() => {
     // Update live IST time
@@ -32,17 +27,6 @@ export default function Header({
     const interval = setInterval(updateTime, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/login');
-      router.refresh();
-    } catch {
-      router.push('/login');
-    }
-  };
 
   return (
     <header
@@ -115,79 +99,58 @@ export default function Header({
         </div>
       </div>
 
-      {/* Right side: Refresh + Admin Profile + Logout */}
+      {/* Right side: Operations Badge + Refresh Button */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Operations Scope Indicator */}
+        <div
+          className="header-ops-badge"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '5px 12px',
+            borderRadius: '16px',
+            backgroundColor: 'var(--care-blue-subtle)',
+            border: '1px solid #bfdbfe',
+            fontSize: '0.78rem',
+            color: 'var(--care-blue)',
+            fontWeight: 600,
+          }}
+        >
+          <ShieldCheck size={14} />
+          <span>Noblecare4u Operations</span>
+        </div>
+
         {onRefresh && (
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            aria-label="Refresh leads data"
+            aria-label="Refresh dashboard data"
             title="Refresh dashboard data"
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              padding: '8px',
+              gap: '6px',
+              padding: '7px 14px',
               borderRadius: '8px',
               border: '1px solid var(--border-light)',
               backgroundColor: '#ffffff',
-              color: 'var(--text-secondary)',
+              color: 'var(--navy-primary)',
+              fontSize: '0.82rem',
+              fontWeight: 600,
               cursor: isRefreshing ? 'wait' : 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
             <RefreshCw
-              size={16}
+              size={15}
               style={{
                 animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
               }}
             />
+            <span className="refresh-text">Refresh</span>
           </button>
         )}
-
-        {/* Admin User Chip */}
-        <div
-          className="admin-profile-chip"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '6px 12px',
-            borderRadius: '20px',
-            backgroundColor: 'var(--bg-surface-subtle)',
-            border: '1px solid var(--border-light)',
-            fontSize: '0.84rem',
-            color: 'var(--navy-primary)',
-            fontWeight: 500,
-          }}
-        >
-          <Shield size={14} color="var(--care-blue)" />
-          <span className="admin-email-text">{adminEmail}</span>
-        </div>
-
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          aria-label="Log out of lead dashboard"
-          title="Log out"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '7px 14px',
-            borderRadius: '8px',
-            backgroundColor: '#fee2e2',
-            color: '#b91c1c',
-            fontSize: '0.84rem',
-            fontWeight: 600,
-            cursor: isLoggingOut ? 'wait' : 'pointer',
-            transition: 'background-color 0.15s ease',
-          }}
-        >
-          <LogOut size={15} />
-          <span className="logout-text">Logout</span>
-        </button>
       </div>
 
       <style jsx global>{`
@@ -207,10 +170,7 @@ export default function Header({
           .ist-badge {
             display: none !important;
           }
-          .admin-email-text {
-            display: none !important;
-          }
-          .logout-text {
+          .refresh-text {
             display: none !important;
           }
         }

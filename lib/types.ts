@@ -150,10 +150,3 @@ export interface DashboardStats {
   }[];
   recentEnquiries: RecentEnquirySummary[];
 }
-
-export interface SessionPayload {
-  email: string;
-  role: 'admin';
-  iat: number;
-  exp: number;
-}
